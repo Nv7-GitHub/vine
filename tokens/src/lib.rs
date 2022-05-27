@@ -1,7 +1,5 @@
 mod typs;
-mod errors;
 pub use typs::*;
-pub use errors::*;
 
 struct StrIter {
   val: Vec<char>,

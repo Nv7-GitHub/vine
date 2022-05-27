@@ -1,5 +1,7 @@
 use std::fmt::{Debug, Display};
+use thiserror::Error;
 
+#[derive(Clone)]
 pub struct Pos {
   pub file: String,
   pub line: usize,
@@ -40,9 +42,19 @@ impl Pos {
       end_char: pos.end_char,
     }
   }
+
+  pub fn start(pos: Pos) -> Pos {
+    Pos {
+      file: pos.file.clone(),
+      line: pos.end_line,
+      char: pos.end_char,
+      end_line: pos.end_line,
+      end_char: pos.end_char + 1,
+    }
+  }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum Operator {
   // Comparison ops
   Equal,
@@ -62,7 +74,7 @@ pub enum Operator {
   Divide,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Clone)]
 pub enum TokenKind {
   Ident(String),
   End, // Semicolon
@@ -79,9 +91,16 @@ pub enum TokenKind {
   Operator(Operator),
 }
 
+impl Display for TokenKind {
+  fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    Debug::fmt(&self, f)
+  }
+}
+
+#[derive(Clone)]
 pub struct Token {
-  kind: TokenKind,
-  pos: Pos,
+  pub kind: TokenKind,
+  pub pos: Pos,
 }
 
 impl Debug for Token {
@@ -92,7 +111,7 @@ impl Debug for Token {
 
 impl Display for Token {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    self.kind.fmt(f)?;
+    Debug::fmt(&self.kind, f)?;
     write!(f, "[{}]", self.pos.to_string())
   }
 }
@@ -104,4 +123,13 @@ impl Token {
       kind: val,
     }
   }
+}
+
+
+#[derive(Error, Debug)]
+pub enum TokenizeError {
+  #[error("{0}: unexpected character: {1}")]
+  UnexpectedCharacter(Pos, char),
+  #[error("{0}: invalid escape code: {1}")]
+  InvalidEscapeCode(Pos, char),
 }

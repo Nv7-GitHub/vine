@@ -7,3 +7,4 @@ edition = "2021"
 
 [dependencies]
 tokens = { path = "../tokens" }
+thiserror = "1.0.24"
