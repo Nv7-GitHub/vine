@@ -75,6 +75,7 @@ pub enum TokenKind {
   Selector, // Period
   Number(String),
   Assign,
+  Define,
   Operator(Operator),
 }
 

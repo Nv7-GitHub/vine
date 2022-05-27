@@ -183,6 +183,20 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
           }
         }
       },
+      ':' => {
+        if it.hasnext() {
+          let start = it.pos();
+          let next = it.next();
+          match next {
+            '=' => {
+              out.push(Token::new(start.extend(it.pos()), TokenKind::Define));
+            },
+            _ => {
+              it.back();
+            }
+          }
+        }
+      },
       '>' => {
         if it.hasnext() {
           let start = it.pos();

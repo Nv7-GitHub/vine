@@ -2,4 +2,5 @@
 members = [
   "vine",
   "tokens",
+  "parse",
 ]

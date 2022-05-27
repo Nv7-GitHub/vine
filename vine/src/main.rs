@@ -1,4 +1,5 @@
 use tokens;
+use parse;
 
 const CODE: &str = r#"package main;
 
@@ -26,5 +27,6 @@ fn main() {
 
 fn main() {
     let res = tokens::tokenize("a.vine".to_string(), CODE.to_string()).expect("tokenize failure");
-    println!("{res:?}");
+    let f = parse::parse("a.vine".to_string(), res);
+    println!("{f:?}");
 }
