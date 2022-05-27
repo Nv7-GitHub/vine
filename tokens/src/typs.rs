@@ -43,9 +43,39 @@ impl Pos {
 }
 
 #[derive(Debug)]
+pub enum Operator {
+  // Comparison ops
+  Equal,
+  NotEqual,
+  Greater,
+  GreaterEqual,
+  Less,
+  LessEqual,
+  // Logical ops
+  Or,
+  Not,
+  And,
+  // Math Ops
+  Add,
+  Subtract,
+  Multiply,
+  Divide,
+}
+
+#[derive(Debug)]
 pub enum TokenKind {
   Ident(String),
   End, // Semicolon
+  String(String),
+  LParen,
+  RParen,
+  LBrack,
+  RBrack,
+  Comma,
+  Selector, // Period
+  Number(String),
+  Assign,
+  Operator(Operator),
 }
 
 pub struct Token {
