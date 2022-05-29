@@ -33,6 +33,7 @@ pub struct Param {
 #[derive(Debug)]
 pub enum ExprKind {
   Ident(String),
+  BinExpr(Box<Expr>, tokens::Operator, Box<Expr>),
 }
 
 #[derive(Debug)]
@@ -43,7 +44,8 @@ pub struct Expr {
 
 #[derive(Debug)]
 pub enum StmtKind {
-  TODO, // TODO: Put actual kinds in here
+  Return(Expr),
+  Comment(String),
 }
 
 #[derive(Debug)]

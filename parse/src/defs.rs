@@ -71,7 +71,11 @@ fn parse_def(f: &mut File, it: &mut Tokens) -> Result<(), ParseError> {
       // Parse body
       let ret = match it.expect(TokenKind::LBrack) {
         Ok(_) => None,
-        Err(_) => Some(parse_expr(it)?),
+        Err(_) => {
+          let v = parse_expr(it)?;
+          it.expect(TokenKind::LBrack)?;
+          Some(v)
+        },
       };
       let mut body: Vec<Stmt> = Vec::new();
       loop {
@@ -103,12 +107,16 @@ fn parse_def(f: &mut File, it: &mut Tokens) -> Result<(), ParseError> {
 fn parse_expr(it: &mut Tokens) -> Result<Expr, ParseError> {
   match it.next()?.kind {
     TokenKind::Ident(val) => {
+      let val = Expr{pos: it.curr().pos, kind: ExprKind::Ident(val)};
       match it.next()?.kind {
         // TODO: Some things here
-
+        TokenKind::Operator(op) => {
+         let rhs = parse_expr(it)?;
+         Ok(Expr{pos: val.pos.extend(rhs.pos.clone()), kind: ExprKind::BinExpr(Box::new(val), op, Box::new(rhs))})
+        }
         _ => {
           it.back();
-          Ok(Expr{pos: it.curr().pos, kind: ExprKind::Ident(val)})
+          Ok(val)
         }
       }
     }
@@ -116,8 +124,20 @@ fn parse_expr(it: &mut Tokens) -> Result<Expr, ParseError> {
   }
 }
 
-// TODO
 fn parse_stmt(it: &mut Tokens) -> Result<Stmt, ParseError> {
   let next = it.next()?;
-  Ok(Stmt{pos: next.pos, kind: StmtKind::TODO})
+  match &next.kind {
+    TokenKind::Ident(key) => {
+      match key.as_str() {
+        "return" => {
+          let expr = parse_expr(it)?;
+          let endpos = it.expect(TokenKind::End)?;
+          Ok(Stmt{pos: next.pos.extend(endpos), kind: StmtKind::Return(expr)})
+        },
+        _ => Err(ParseError::UnexpectedToken(next.pos, next.kind))
+      }
+    },
+    TokenKind::Comment(v) => Ok(Stmt{pos: next.pos, kind: StmtKind::Comment(v.clone())}),
+    _ => Err(ParseError::UnexpectedToken(next.pos, next.kind))
+  }
 }

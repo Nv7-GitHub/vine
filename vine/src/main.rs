@@ -5,6 +5,7 @@ const CODE: &str = r#"import "a" as b;
 import "b";
 
 fn add(a int, b int) int {
+    return a;
     //return a.add(a, b);
 }
 
@@ -12,7 +13,7 @@ fn math(a int, b int) int {
     //if a != 0 {
     //    return 100;
     //}
-    //return a + b;
+    return a + b;
 }
 
 fn main() {
@@ -26,7 +27,11 @@ fn main() {
 
 fn main() {
     let res = tokens::tokenize("a.vine".to_string(), CODE.to_string()).expect("tokenize failure");
-    println!("Tokens:\n{res:?}");
+    println!("Tokens:");
+    for tok in res.iter() {
+        println!("{}", tok);
+    }
+    println!("\nParsed:");
     let f = parse::parse("a.vine".to_string(), res).expect("parse failure");
-    println!("\nParsed:\n{f:#?}");
+    println!("{f:#?}");
 }

@@ -10,7 +10,7 @@ pub struct Tokens {
 }
 
 impl Tokens {
-  fn expect(&mut self, kind: TokenKind) -> Result<(), ParseError> {
+  fn expect(&mut self, kind: TokenKind) -> Result<Pos, ParseError> {
     if self.ind >= self.tok.len() {
       let last = self.tok.last().unwrap();
       return Err(ParseError::ExpectedToken(Pos::start(last.pos.clone()), kind));
@@ -20,7 +20,7 @@ impl Tokens {
       return Err(ParseError::ExpectedToken(val.pos.clone(), kind));
     }
     self.ind += 1;
-    Ok(())
+    Ok(val.pos.clone())
   }
 
   fn next(&mut self) -> Result<Token, ParseError> {
