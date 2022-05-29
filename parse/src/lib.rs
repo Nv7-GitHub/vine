@@ -2,6 +2,7 @@ use tokens::*;
 
 mod typs;
 mod defs;
+mod expr;
 pub use typs::*;
 
 pub struct Tokens {

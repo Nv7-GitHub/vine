@@ -5,8 +5,7 @@ const CODE: &str = r#"import "a" as b;
 import "b";
 
 fn add(a int, b int) int {
-    return a;
-    //return a.add(a, b);
+    return a.add(a, b);
 }
 
 fn math(a int, b int) int {

@@ -54,7 +54,7 @@ fn parse_def(f: &mut File, it: &mut Tokens) -> Result<(), ParseError> {
         loop {
           // Get param name
           if let TokenKind::Ident(name) = it.next()?.kind {
-            let typ = parse_expr(it)?;
+            let typ = expr::parse_expr(it)?;
             if let TokenKind::RParen = it.next()?.kind { // end of params
               break
             }
@@ -72,7 +72,7 @@ fn parse_def(f: &mut File, it: &mut Tokens) -> Result<(), ParseError> {
       let ret = match it.expect(TokenKind::LBrack) {
         Ok(_) => None,
         Err(_) => {
-          let v = parse_expr(it)?;
+          let v = expr::parse_expr(it)?;
           it.expect(TokenKind::LBrack)?;
           Some(v)
         },
@@ -104,33 +104,13 @@ fn parse_def(f: &mut File, it: &mut Tokens) -> Result<(), ParseError> {
   Err(ParseError::UnexpectedToken(next.pos, next.kind))
 }
 
-fn parse_expr(it: &mut Tokens) -> Result<Expr, ParseError> {
-  match it.next()?.kind {
-    TokenKind::Ident(val) => {
-      let val = Expr{pos: it.curr().pos, kind: ExprKind::Ident(val)};
-      match it.next()?.kind {
-        // TODO: Some things here
-        TokenKind::Operator(op) => {
-         let rhs = parse_expr(it)?;
-         Ok(Expr{pos: val.pos.extend(rhs.pos.clone()), kind: ExprKind::BinExpr(Box::new(val), op, Box::new(rhs))})
-        }
-        _ => {
-          it.back();
-          Ok(val)
-        }
-      }
-    }
-    _ => Err(ParseError::UnexpectedToken(it.curr().pos, it.curr().kind))
-  }
-}
-
 fn parse_stmt(it: &mut Tokens) -> Result<Stmt, ParseError> {
   let next = it.next()?;
   match &next.kind {
     TokenKind::Ident(key) => {
       match key.as_str() {
         "return" => {
-          let expr = parse_expr(it)?;
+          let expr = expr::parse_expr(it)?;
           let endpos = it.expect(TokenKind::End)?;
           Ok(Stmt{pos: next.pos.extend(endpos), kind: StmtKind::Return(expr)})
         },
