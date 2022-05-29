@@ -1,9 +1,10 @@
 use tokens::*;
 
 mod typs;
+mod defs;
 pub use typs::*;
 
-struct Tokens {
+pub struct Tokens {
   tok: Vec<Token>,
   ind: usize,
 }
@@ -27,23 +28,27 @@ impl Tokens {
       let last = self.tok.last().unwrap();
       return Err(ParseError::TokenOutOfRange(Pos::start(last.pos.clone())));
     }
+    let val = self.tok[self.ind].clone();
     self.ind += 1;
-    Ok(self.tok[self.ind - 1].clone())
+    Ok(val)
+  }
+
+  fn curr(&self) -> Token {
+    self.tok[self.ind - 1].clone()
+  }
+
+  fn back(&mut self) {
+    self.ind -= 1;
+  }
+
+  fn hasnext(&self) -> bool {
+    self.ind < self.tok.len()
   }
 }
 
 pub fn parse(name: String, tokens: Vec<Token>) -> Result<File, ParseError> {
   let mut out = File::new(name);
   let mut tok = Tokens {tok: tokens, ind: 0};
-
-  // Get package
-  tok.expect(TokenKind::Ident("package".to_string()))?;
-  let next = tok.next()?;
-  if let TokenKind::Ident(name) = next.kind {
-    out.package = name;
-  } else {
-    return Err(ParseError::ExpectedToken(next.pos, TokenKind::Ident("".to_string())));
-  }
-
+  defs::parse_defs(&mut out, &mut tok)?;
   Ok(out)
 }

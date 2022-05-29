@@ -60,24 +60,49 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
   let mut out: Vec<Token> = Vec::new();
   let mut it = StrIter::new(src, file);
   while it.hasnext() {
+    let startpos = it.pos();
     let c = it.next();
     match c {
       ' ' => (),
       '\t' => (),
       '\n' => (),
-      ';' => out.push(Token::new(it.pos(), TokenKind::End)),
-      '(' => out.push(Token::new(it.pos(), TokenKind::LParen)),
-      ')' => out.push(Token::new(it.pos(), TokenKind::RParen)),
-      '{' => out.push(Token::new(it.pos(), TokenKind::LBrack)),
-      '}' => out.push(Token::new(it.pos(), TokenKind::RBrack)),
-      ',' => out.push(Token::new(it.pos(), TokenKind::Comma)),
-      '.' => out.push(Token::new(it.pos(), TokenKind::Selector)),
-      '+' => out.push(Token::new(it.pos(), TokenKind::Operator(Operator::Add))),
-      '-' => out.push(Token::new(it.pos(), TokenKind::Operator(Operator::Subtract))),
-      '*' => out.push(Token::new(it.pos(), TokenKind::Operator(Operator::Multiply))),
-      '/' => out.push(Token::new(it.pos(), TokenKind::Operator(Operator::Divide))),
+      ';' => out.push(Token::new(startpos, TokenKind::End)),
+      '(' => out.push(Token::new(startpos, TokenKind::LParen)),
+      ')' => out.push(Token::new(startpos, TokenKind::RParen)),
+      '{' => out.push(Token::new(startpos, TokenKind::LBrack)),
+      '}' => out.push(Token::new(startpos, TokenKind::RBrack)),
+      ',' => out.push(Token::new(startpos, TokenKind::Comma)),
+      '.' => out.push(Token::new(startpos, TokenKind::Selector)),
+      '+' => out.push(Token::new(startpos, TokenKind::Operator(Operator::Add))),
+      '-' => out.push(Token::new(startpos, TokenKind::Operator(Operator::Subtract))),
+      '*' => out.push(Token::new(startpos, TokenKind::Operator(Operator::Multiply))),
+      '/' => {
+        if it.hasnext() {
+          let next = it.next();
+          match next {
+            '/' => {
+              // Single-line comment
+              let mut val = String::new();
+              while it.hasnext() {
+                let c = it.next();
+                if c == '\n' {
+                  break;
+                }
+                val.push(c);
+              }
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Comment(val)));
+            },
+            '*' => {
+              // Multi-line comment
+            }
+            _ => {
+              it.back();
+              out.push(Token::new(startpos, TokenKind::Operator(Operator::Divide)));
+            }
+          }
+        }
+      },
       '"' => {
-        let start = it.pos();
         let mut val = String::new();
         'stringadd: while it.hasnext() {
           let c = it.next();
@@ -85,24 +110,24 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
             '"' => break 'stringadd,
             '\\' => {
               if it.hasnext() {
+                let codepos = it.pos();
                 let code = it.next();
                 match code {
                   'n' => val.push('\n'),
                   't' => val.push('\t'),
                   '\\' => val.push('\\'),
                   '"' => val.push('"'),
-                  _ => {it.back(); return Err(TokenizeError::InvalidEscapeCode(it.pos(), c))}
+                  _ => {it.back(); return Err(TokenizeError::InvalidEscapeCode(codepos, c))}
                 }
               }
             },
             _ => val.push(c),
           }
         }
-        out.push(Token::new(start.extend(it.pos()), TokenKind::String(val)));
+        out.push(Token::new(startpos.extend(it.pos()), TokenKind::String(val)));
       },
       '0' | '1' | '2' | '3' | '5' | '6' | '7' | '8' | '9' => {
         // Add ident
-        let start = it.pos();
         let mut val = c.to_string();
         let mut has_period = false;
         while it.hasnext() {
@@ -121,45 +146,42 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
             val.push(c);
           }
         }
-        out.push(Token::new(start.extend(it.pos()), TokenKind::Number(val)));
+        out.push(Token::new(startpos.extend(it.pos()), TokenKind::Number(val)));
       }
       '=' => {
         if it.hasnext() {
-          let start = it.pos();
           let next = it.next();
           match next {
             '=' => {
-              out.push(Token::new(start.extend(it.pos()), TokenKind::Operator(Operator::Equal)));
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Operator(Operator::Equal)));
             },
             _ => {
               it.back();
-              out.push(Token::new(it.pos(), TokenKind::Assign));
+              out.push(Token::new(startpos, TokenKind::Assign));
             }
           }
         }
       },
       '!' => {
         if it.hasnext() {
-          let start = it.pos();
           let next = it.next();
           match next {
             '=' => {
-              out.push(Token::new(start.extend(it.pos()), TokenKind::Operator(Operator::NotEqual)));
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Operator(Operator::NotEqual)));
             },
             _ => {
               it.back();
-              out.push(Token::new(it.pos(), TokenKind::Operator(Operator::Not)));
+              out.push(Token::new(startpos, TokenKind::Operator(Operator::Not)));
             }
           }
         }
       },
       '|' => {
         if it.hasnext() {
-          let start = it.pos();
           let next = it.next();
           match next {
             '|' => {
-              out.push(Token::new(start.extend(it.pos()), TokenKind::Operator(Operator::Or)));
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Operator(Operator::Or)));
             },
             _ => {
               it.back();
@@ -169,11 +191,10 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
       },
       '&' => {
         if it.hasnext() {
-          let start = it.pos();
           let next = it.next();
           match next {
             '&' => {
-              out.push(Token::new(start.extend(it.pos()), TokenKind::Operator(Operator::And)));
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Operator(Operator::And)));
             },
             _ => {
               it.back();
@@ -183,11 +204,10 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
       },
       ':' => {
         if it.hasnext() {
-          let start = it.pos();
           let next = it.next();
           match next {
             '=' => {
-              out.push(Token::new(start.extend(it.pos()), TokenKind::Define));
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Define));
             },
             _ => {
               it.back();
@@ -197,30 +217,28 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
       },
       '>' => {
         if it.hasnext() {
-          let start = it.pos();
           let next = it.next();
           match next {
             '=' => {
-              out.push(Token::new(start.extend(it.pos()), TokenKind::Operator(Operator::GreaterEqual)));
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Operator(Operator::GreaterEqual)));
             },
             _ => {
               it.back();
-              out.push(Token::new(it.pos(), TokenKind::Operator(Operator::Greater)));
+              out.push(Token::new(startpos, TokenKind::Operator(Operator::Greater)));
             }
           }
         }
       },
       '<' => {
         if it.hasnext() {
-          let start = it.pos();
           let next = it.next();
           match next {
             '=' => {
-              out.push(Token::new(start.extend(it.pos()), TokenKind::Operator(Operator::LessEqual)));
+              out.push(Token::new(startpos.extend(it.pos()), TokenKind::Operator(Operator::LessEqual)));
             },
             _ => {
               it.back();
-              out.push(Token::new(it.pos(), TokenKind::Operator(Operator::Less)));
+              out.push(Token::new(startpos, TokenKind::Operator(Operator::Less)));
             }
           }
         }
@@ -228,7 +246,6 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
       _ => {
         if valid_ident_start(c) {
           // Add ident
-          let start = it.pos();
           let mut val = c.to_string();
           while it.hasnext() {
             let c = it.next();
@@ -239,9 +256,9 @@ pub fn tokenize(file: String, src: String) -> Result<Vec<Token>, TokenizeError> 
               val.push(c);
             }
           }
-          out.push(Token::new(start.extend(it.pos()), TokenKind::Ident(val)));
+          out.push(Token::new(startpos.extend(it.pos()), TokenKind::Ident(val)));
         } else {
-          return Err(TokenizeError::UnexpectedCharacter(it.pos(), c))
+          return Err(TokenizeError::UnexpectedCharacter(startpos, c))
         }
       },
     }

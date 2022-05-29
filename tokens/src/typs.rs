@@ -18,7 +18,7 @@ impl Debug for Pos {
 
 impl Display for Pos {
   fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-    write!(f, "{}:{}:{}", self.file, self.line, self.char)
+    write!(f, "{}:{}:{}", self.file, self.line + 1, self.char + 1)
   }
 }
 
@@ -26,8 +26,8 @@ impl Pos {
   pub fn new(file: &String, line: usize, char: usize) -> Self {
     Self {
       file: file.clone(),
-      line: line,
-      char: char,
+      line,
+      char,
       end_line: line,
       end_char: char + 1,
     }
@@ -89,6 +89,7 @@ pub enum TokenKind {
   Assign,
   Define,
   Operator(Operator),
+  Comment(String),
 }
 
 impl Display for TokenKind {
