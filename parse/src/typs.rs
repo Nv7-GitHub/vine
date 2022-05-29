@@ -20,14 +20,14 @@ pub struct Import {
 pub struct Function {
   pub name: String,
   pub params: Vec<Param>,
-  pub ret: Option<Expr>,
+  pub ret: Option<TypeExpr>,
   pub body: Vec<Stmt>,
 }
 
 #[derive(Debug)]
 pub struct Param {
   pub name: String,
-  pub typ: Expr,
+  pub typ: TypeExpr,
 }
 
 #[derive(Debug)]
@@ -41,6 +41,19 @@ pub struct Expr {
   pub kind: ExprKind,
   pub pos: tokens::Pos,
 }
+
+#[derive(Debug)]
+pub enum TypeExprKind {
+  Ident(String),
+  SelectorExpr(String, Box<TypeExpr>)
+}
+
+#[derive(Debug)]
+pub struct TypeExpr {
+  pub kind: TypeExprKind,
+  pub pos: tokens::Pos,
+}
+
 
 #[derive(Debug)]
 pub enum StmtKind {

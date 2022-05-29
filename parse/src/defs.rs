@@ -54,7 +54,7 @@ fn parse_def(f: &mut File, it: &mut Tokens) -> Result<(), ParseError> {
         loop {
           // Get param name
           if let TokenKind::Ident(name) = it.next()?.kind {
-            let typ = expr::parse_expr(it)?;
+            let typ = expr::parse_type_expr(it)?;
             if let TokenKind::RParen = it.next()?.kind { // end of params
               break
             }
@@ -72,7 +72,7 @@ fn parse_def(f: &mut File, it: &mut Tokens) -> Result<(), ParseError> {
       let ret = match it.expect(TokenKind::LBrack) {
         Ok(_) => None,
         Err(_) => {
-          let v = expr::parse_expr(it)?;
+          let v = expr::parse_type_expr(it)?;
           it.expect(TokenKind::LBrack)?;
           Some(v)
         },
